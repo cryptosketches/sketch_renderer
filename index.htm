@@ -1,0 +1,116 @@
+<html>
+
+<head>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .signature-pad-canvas {
+            background-color: #fff;
+            width: 800px;
+            height: 494px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.27), 0 0 40px rgba(0, 0, 0, 0.08) inset;
+        }
+
+        img {
+            width: 100%;
+        }
+
+        textarea {
+            width: 800px;
+            height: 100px;
+        }
+
+        td {
+            width: 204px;
+            padding: 10px;
+            vertical-align: top;            
+        }
+    </style>
+</head>
+
+<body>
+    <h1>CryptoSketch Renderer</h1>
+
+    <p>
+        All CryptoSketch artworks are encoded directly to the Ethereum blockchain, and therefore
+        do not depend on <a href="https://www.cryptosketches.com">cryptosketches.com</a> being
+        available.
+    </p>
+    <p>
+        The Javascript on this page and in the included files are all that's required for 
+        decoding sketch data and rendering it. The files are:
+        <ol>
+            <li><a href="sketches.js"><code>sketches.js</code></a> decodes sketch data from text</li>
+            <li><a href="base62.js"><code>base62.js</code></a> is an open source function for efficiently representing numbers as text</li>
+            <li><a href="signature_pad.umd.min.js"><code>signature_pad.umd.min.js</code></a> is the open source "Signature Pad" library for animated drawing</li>
+        </ol>
+    </p>
+
+    <h3>How to use</h3>
+    <table>
+        <tr>
+            <td><img  src="howto01.jpg"/></td>
+            <td><img  src="howto02.jpg"/></td>
+            <td><img  src="howto03.jpg"/></td>
+            <td><img  src="howto04.jpg"/></td>
+        </tr>
+        <tr>
+            <td>1. On CryptoSketches, navigate to <a href="https://www.cryptosketches.com/gallery">any sketch</a> and click the block number link to see the transaction that created it on <b>etherscan.io</b>.</td>
+            <td>2. Click the highlighted button to see more info.</td>
+            <td>3. Decode the input data to see the parameters passed to the block that wrote the sketch to Ethereum.</td>
+            <td>4. Triple click the value for <code>_data</code> and copy it, then paste it in the text field below and click "Load".</td>
+        </tr>
+    </table>
+
+    <canvas id="signature-pad-canvas" class="signature-pad-canvas"></canvas>
+
+    <script src="base62.js"></script>
+    <script src="sketches.js"></script>
+    <script src="signature_pad.umd.min.js"></script>
+    <script>
+        function renderSketch(sketch) {
+            var canvas = document.getElementById("signature-pad-canvas");
+
+            let signaturePad = new SignaturePad(canvas, {
+                velocityFilterWeight: 0.2,
+                minWidth: 1,
+                maxWidth: 1,
+                widthFactor: 1,
+                backgroundColor: "white"
+            });
+
+            var data = sketchFromString(sketch);
+            var width = 800
+            var height = 494
+
+            var scaledData = data.slice().map(path => ({
+                "color": path.color,
+                "points": path.points.map(coord => ({
+                    "x": coord.x * width,
+                    "y": coord.y * height,
+                    "time": coord.time,
+                })),
+                "widthFactor": path.widthFactor
+            }));
+
+            var ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext("2d").scale(ratio, ratio);
+
+            signaturePad.fromData(scaledData);
+            signaturePad.startAnimating();
+        }
+    </script>
+
+    <p>
+        <textarea
+            id="sketchData">4:@FF2bLv0bFUZczBgcOLueiU7fqf6fV93gq63gV63hFI3jb79kiZ3kVM3lyu3miR3mNB3nah6na33mMF3mhD3kUu7kpF3kil6l2Z3miy3nNx3oVe3qxQ3s2t3t1Z3tvV3tno3smJasfYdsDI3t913tLZ3uoQ3vwz7wTo3xgb3xn66wZz3wupawvpdxgy3yMaazLChAvS6BDs6D8jaCvykBg86ADw3ADC3ADI3B8M3C8N3E0U6ELb3F0m6F0e3E7X7DD13D873</textarea>
+        <button onclick="renderSketch(document.getElementById('sketchData').value)">Load</button>
+    </p>
+
+</body>
+
+</html>
